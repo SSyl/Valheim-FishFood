@@ -1,19 +1,37 @@
 ﻿using System;
 using BepInEx;
+using BepInEx.Configuration;
 using JotunnLib.Managers;
 using JotunnLib.Entities;
+using System.Collections.Generic;
+using System.Linq;
+using System.IO;
+using UnityEngine;
 
 namespace FishFood
 {
-    [BepInPlugin("SSyl.FishFood", "FishFood", "1.0.0")]
+    [BepInPlugin("SSyl.FishFood", "FishFood", "1.1.0")]
     [BepInDependency("com.bepinex.plugins.jotunnlib")]
     public class FishFood : BaseUnityPlugin
     {
+        public static ConfigEntry<bool> modEnabled;
+        public static ConfigEntry<float> repairAmount;
+        public static ConfigEntry<float> repairAmountAdvancedKit;
+        public static ConfigEntry<bool> customJsonRecipes;
+        public static ConfigEntry<int> nexusID;
+
         private void Awake()
         {
-            // Register our handler
-            ObjectManager.Instance.ObjectRegister += registerObjects;
-            PrefabManager.Instance.PrefabRegister += registerPrefabs;
+            modEnabled = Config.Bind("General", "Enabled", true, "Settings this to false disables all features of this mod.");
+            customJsonRecipes = Config.Bind("General", "CustomJsonRecipes", false, "Setting this to true will make the mod use custom recipes that you've defined in a seperate custom_recipes.json file.\nYou must create this file yourself, otherwise this setting won't do anything.");
+            nexusID = Config.Bind("General", "NexusID", 531, "Nexus mod ID for update checker. Do not change this value.");
+
+            if (!modEnabled.Value)
+                return;
+
+                // Register our handler
+                ObjectManager.Instance.ObjectRegister += registerObjects;
+                PrefabManager.Instance.PrefabRegister += registerPrefabs;
         }
         private void registerPrefabs(object sender, EventArgs e)
         {
@@ -23,133 +41,55 @@ namespace FishFood
 
         private void registerObjects(object sender, EventArgs e)
         {
+            string[] itemsArray = 
+            {   "FishSausages",
+                "FishSoup",
+                "FishingRod",
+                "FishingBait"
+            };
             // Items
             ObjectManager.Instance.RegisterItem("FishSausages");
             ObjectManager.Instance.RegisterItem("FishSoup");
             // Recipes
-            ObjectManager.Instance.RegisterRecipe(new RecipeConfig()
+            string recipesFileName = "recipes.json";
+            if (customJsonRecipes.Value == true && File.Exists(Path.Combine(Paths.PluginPath, "FishFood", "custom_recipes.json")))
             {
-                // Name of the recipe (defaults to "Recipe_YourItem")
-                Name = "Recipe_FishSausages",
+                recipesFileName = "custom_recipes.json";
+            }
 
-                // Name of the prefab for the crafted item
-                Item = "FishSausages",
-
-                Amount = 4,
-
-                // Name of the prefab for the crafting station we wish to use
-                CraftingStation = "piece_cauldron",
-
-                // List of requirements to craft your item
-                Requirements = new PieceRequirementConfig[]
+            string jsonString = File.ReadAllText(Path.Combine(Paths.PluginPath, "FishFood", recipesFileName));
+            RecipeList recipeList = LitJson.JsonMapper.ToObject<RecipeList>(jsonString);
+            
+            if (recipeList != null)
+            {
+                foreach (var recipe in recipeList.recipes)
                 {
-                    new PieceRequirementConfig()
+                    RecipeConfig recipeConfig = new RecipeConfig
                     {
-                        // Prefab name of requirement
-                        Item = "FishRaw",
-
-                        // Amount required
-                        Amount = 2
-                    },
-                    new PieceRequirementConfig()
+                        Name = recipe.name,
+                        Item = recipe.item,
+                        Amount = recipe.amount,
+                        CraftingStation = recipe.craftingStation,
+                        MinStationLevel = recipe.minStationLevel
+                    };
+                    List<PieceRequirementConfig> list = new List<PieceRequirementConfig>();
+                    foreach (var recipeReq in recipe.requirements)
                     {
-                        // Prefab name of requirement
-                        Item = "Dandelion",
+                        list.Add(
+                        new PieceRequirementConfig()
+                        {
+                            Item = recipeReq.item,
+                            Amount = recipeReq.amount
+                        });
+                    }
+                    recipeConfig.Requirements = list.ToArray();
 
-                        // Amount required
-                        Amount = 1
-                    },
-                    new PieceRequirementConfig()
+                    if (itemsArray.Contains(recipeConfig.Item))
                     {
-                        // Prefab name of requirement
-                        Item = "Thistle",
-
-                        // Amount required
-                        Amount = 3
-                    },
-                    new PieceRequirementConfig()
-                    {
-                        // Prefab name of requirement
-                        Item = "Entrails",
-
-                        // Amount required
-                        Amount = 2
+                        ObjectManager.Instance.RegisterRecipe(recipeConfig);
                     }
                 }
-            });
-
-            ObjectManager.Instance.RegisterRecipe(new RecipeConfig()
-            {
-                Name = "Recipe_FishSoup",
-                Item = "FishSoup",
-                CraftingStation = "piece_cauldron",
-
-                Requirements = new PieceRequirementConfig[]
-                {
-                    new PieceRequirementConfig()
-                    {
-                        Item = "FishRaw",
-                        Amount = 3
-                    },
-                    new PieceRequirementConfig()
-                    {
-                        Item = "Carrot",
-                        Amount = 2
-                    },
-                    new PieceRequirementConfig()
-                    {
-                        Item = "Turnip",
-                        Amount = 1
-                    },
-                    new PieceRequirementConfig()
-                    {
-                        Item = "Honey",
-                        Amount = 2
-                    }
-                }
-            });
-
-            ObjectManager.Instance.RegisterRecipe(new RecipeConfig()
-            {
-                Name = "Recipe_FishingRod",
-                Item = "FishingRod",
-                CraftingStation = "piece_workbench",
-
-                Requirements = new PieceRequirementConfig[]
-                {
-                    new PieceRequirementConfig()
-                    {
-                        Item = "RoundLog",
-                        Amount = 5
-                    },
-                    new PieceRequirementConfig()
-                    {
-                        Item = "FineWood",
-                        Amount = 10
-                    }
-                }
-            });
-
-            ObjectManager.Instance.RegisterRecipe(new RecipeConfig()
-            {
-                Name = "Recipe_FishingBait",
-                Item = "FishingBait",
-                Amount = 20,
-
-                Requirements = new PieceRequirementConfig[]
-                {
-                    new PieceRequirementConfig()
-                    {
-                        Item = "Resin",
-                        Amount = 4
-                    },
-                    new PieceRequirementConfig()
-                    {
-                        Item = "NeckTail",
-                        Amount = 1
-                    }
-                }
-            });
+            }
         }
     }
 }

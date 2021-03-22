@@ -1,0 +1,84 @@
+{
+  "recipes": [
+    {
+      "name": "Recipe_FishSausages",
+      "item": "FishSausages",
+      "amount": 4,
+      "craftingStation": "piece_cauldron",
+      "requirements": [
+        {
+          "item": "FishRaw",
+          "amount": 2
+        },
+        {
+          "item": "Dandelion",
+          "amount": 1
+        },
+        {
+          "item": "Thistle",
+          "amount": 3
+        },
+        {
+          "item": "Entrails",
+          "amount": 2
+        }
+      ]
+    },
+    {
+      "name": "Recipe_FishSoup",
+      "item": "FishSoup",
+      "amount": 1,
+      "craftingStation": "piece_cauldron",
+      "requirements": [
+        {
+          "item": "FishRaw",
+          "amount": 3
+        },
+        {
+          "item": "Carrot",
+          "amount": 2
+        },
+        {
+          "item": "Turnip",
+          "amount": 1
+        },
+        {
+          "item": "Honey",
+          "amount": 2
+        }
+      ]
+    },
+    {
+      "name": "Recipe_FishingRod",
+      "item": "FishingRod",
+      "amount": 1,
+      "craftingStation": "piece_workbench",
+      "requirements": [
+        {
+          "item": "RoundLog",
+          "amount": 5
+        },
+        {
+          "item": "FineWood",
+          "amount": 10
+        }
+      ]
+    },
+    {
+      "name": "Recipe_FishingBait",
+      "item": "FishingBait",
+      "amount": 20,
+      "craftingStation": "",
+      "requirements": [
+        {
+          "item": "Resin",
+          "amount": 4
+        },
+        {
+          "item": "NeckTail",
+          "amount": 1
+        }
+      ]
+    }
+  ]
+}
